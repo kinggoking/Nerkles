@@ -1,0 +1,1436 @@
+local DELETEVENT = _G.PATH
+
+local AntiSkid = Instance.new("ScreenGui")
+
+local Nerkless = Instance.new("Frame")
+
+local ImageLabel = Instance.new("ImageLabel")
+
+local MainFrame = Instance.new("Frame")
+
+local TextLabel = Instance.new("TextLabel")
+
+local ImageButton = Instance.new("ImageButton")
+
+local Kill = Instance.new("TextButton")
+
+local Kick = Instance.new("TextButton")
+
+local Ban = Instance.new("TextButton")
+
+local dex = Instance.new("TextButton")
+
+local Noregen = Instance.new("TextButton")
+
+local SLOCK = Instance.new("TextButton")
+
+local dws = Instance.new("TextButton")
+
+local blockhead = Instance.new("TextButton")
+
+local dg = Instance.new("TextButton")
+
+local target = Instance.new("TextBox")
+
+local Players = game:GetService("Players")
+
+function splitString(str,delim)
+
+	local broken = {}
+	if delim == nil then delim = "," end
+
+	for w in string.gmatch(str,"[^"..delim.."]+") do
+
+		table.insert(broken,w)
+
+	end
+
+	return broken
+
+end
+
+function toTokens(str)
+
+	local tokens = {}
+
+	for op,name in string.gmatch(str,"([+-])([^+-]+)") do
+
+		table.insert(tokens,{Operator = op,Name = name})
+
+	end
+
+	return tokens
+
+end
+
+function getRoot(char)
+
+	local rootPart = char:FindFirstChild('HumanoidRootPart') or char:FindFirstChild('Torso') or char:FindFirstChild('UpperTorso')
+
+	return rootPart
+
+end
+
+local WTS = function(Object)
+
+	local ObjectVector = workspace.CurrentCamera:WorldToScreenPoint(Object.Position)
+
+	return Vector2.new(ObjectVector.X, ObjectVector.Y)
+
+end
+
+local mouse = Players.LocalPlayer:GetMouse()
+
+local MousePositionToVector2 = function()
+
+	return Vector2.new(mouse.X, mouse.Y)
+
+end
+
+local GetClosestPlayerFromCursor = function()
+
+	local found = nil
+
+	local ClosestDistance = math.huge
+
+	for i, v in pairs(Players:GetPlayers()) do
+
+		if v ~= Players.LocalPlayer and v.Character and v.Character:FindFirstChildOfClass("Humanoid") then
+
+			for k, x in pairs(v.Character:GetChildren()) do
+
+				if string.find(x.Name, "Torso") then
+
+					local Distance = (WTS(x) - MousePositionToVector2()).Magnitude
+
+					if Distance < ClosestDistance then
+
+						ClosestDistance = Distance
+
+						found = v
+
+					end
+
+				end
+
+			end
+
+		end
+
+	end
+
+	return found
+
+end
+
+local SpecialPlayerCases = {
+
+	["all"] = function(speaker) return Players:GetPlayers() end,
+
+	["others"] = function(speaker)
+
+		local plrs = {}
+
+		for i,v in pairs(Players:GetPlayers()) do
+
+			if v ~= speaker then
+
+				table.insert(plrs,v)
+
+			end
+
+		end
+
+		return plrs
+
+	end,
+
+	["me"] = function(speaker)return {speaker} end,
+
+	["#(%d+)"] = function(speaker,args,currentList)
+
+		local returns = {}
+
+		local randAmount = tonumber(args[1])
+
+		local players = {unpack(currentList)}
+
+		for i = 1,randAmount do
+
+			if #players == 0 then break end
+
+			local randIndex = math.random(1,#players)
+
+			table.insert(returns,players[randIndex])
+
+			table.remove(players,randIndex)
+
+		end
+
+		return returns
+
+	end,
+
+	["random"] = function(speaker,args,currentList)
+
+		local players = Players:GetPlayers()
+
+		local localplayer = Players.LocalPlayer
+
+		table.remove(players, table.find(players, localplayer))
+
+		return {players[math.random(1,#players)]}
+
+	end,
+
+	["%%(.+)"] = function(speaker,args)
+
+		local returns = {}
+
+		local team = args[1]
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if plr.Team and string.sub(string.lower(plr.Team.Name),1,#team) == string.lower(team) then
+
+				table.insert(returns,plr)
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["allies"] = function(speaker)
+
+		local returns = {}
+
+		local team = speaker.Team
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if plr.Team == team then
+
+				table.insert(returns,plr)
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["enemies"] = function(speaker)
+
+		local returns = {}
+
+		local team = speaker.Team
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if plr.Team ~= team then
+
+				table.insert(returns,plr)
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["team"] = function(speaker)
+
+		local returns = {}
+
+		local team = speaker.Team
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if plr.Team == team then
+
+				table.insert(returns,plr)
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["nonteam"] = function(speaker)
+
+		local returns = {}
+
+		local team = speaker.Team
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if plr.Team ~= team then
+
+				table.insert(returns,plr)
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["friends"] = function(speaker,args)
+
+		local returns = {}
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if plr:IsFriendsWith(speaker.UserId) and plr ~= speaker then
+
+				table.insert(returns,plr)
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["nonfriends"] = function(speaker,args)
+
+		local returns = {}
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if not plr:IsFriendsWith(speaker.UserId) and plr ~= speaker then
+
+				table.insert(returns,plr)
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["guests"] = function(speaker,args)
+
+		local returns = {}
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if plr.Guest then
+
+				table.insert(returns,plr)
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["bacons"] = function(speaker,args)
+
+		local returns = {}
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if plr.Character:FindFirstChild('Pal Hair') or plr.Character:FindFirstChild('Kate Hair') then
+
+				table.insert(returns,plr)
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["age(%d+)"] = function(speaker,args)
+
+		local returns = {}
+
+		local age = tonumber(args[1])
+
+		if not age == nil then return end
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if plr.AccountAge <= age then
+
+				table.insert(returns,plr)
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["nearest"] = function(speaker,args,currentList)
+
+		local speakerChar = speaker.Character
+
+		if not speakerChar or not getRoot(speakerChar) then return end
+
+		local lowest = math.huge
+
+		local NearestPlayer = nil
+
+		for _,plr in pairs(currentList) do
+
+			if plr ~= speaker and plr.Character then
+
+				local distance = plr:DistanceFromCharacter(getRoot(speakerChar).Position)
+
+				if distance < lowest then
+
+					lowest = distance
+
+					NearestPlayer = {plr}
+
+				end
+
+			end
+
+		end
+
+		return NearestPlayer
+
+	end,
+
+	["farthest"] = function(speaker,args,currentList)
+
+		local speakerChar = speaker.Character
+
+		if not speakerChar or not getRoot(speakerChar) then return end
+
+		local highest = 0
+
+		local Farthest = nil
+
+		for _,plr in pairs(currentList) do
+
+			if plr ~= speaker and plr.Character then
+
+				local distance = plr:DistanceFromCharacter(getRoot(speakerChar).Position)
+
+				if distance > highest then
+
+					highest = distance
+
+					Farthest = {plr}
+
+				end
+
+			end
+
+		end
+
+		return Farthest
+
+	end,
+
+	["group(%d+)"] = function(speaker,args)
+
+		local returns = {}
+
+		local groupID = tonumber(args[1])
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if plr:IsInGroup(groupID) then  
+
+				table.insert(returns,plr)
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["alive"] = function(speaker,args)
+
+		local returns = {}
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if plr.Character and plr.Character:FindFirstChildOfClass("Humanoid") and plr.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+
+				table.insert(returns,plr)
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["dead"] = function(speaker,args)
+
+		local returns = {}
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if (not plr.Character or not plr.Character:FindFirstChildOfClass("Humanoid")) or plr.Character:FindFirstChildOfClass("Humanoid").Health <= 0 then
+
+				table.insert(returns,plr)
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["rad(%d+)"] = function(speaker,args)
+
+		local returns = {}
+
+		local radius = tonumber(args[1])
+
+		local speakerChar = speaker.Character
+
+		if not speakerChar or not getRoot(speakerChar) then return end
+
+		for _,plr in pairs(Players:GetPlayers()) do
+
+			if plr.Character and getRoot(plr.Character) then
+
+				local magnitude = (getRoot(plr.Character).Position-getRoot(speakerChar).Position).magnitude
+
+				if magnitude <= radius then table.insert(returns,plr) end
+
+			end
+
+		end
+
+		return returns
+
+	end,
+
+	["cursor"] = function(speaker)
+
+		local plrs = {}
+
+		local v = GetClosestPlayerFromCursor()
+
+		if v ~= nil then table.insert(plrs, v) end
+
+		return plrs
+
+	end,
+
+}
+
+function onlyIncludeInTable(tab,matches)
+
+	local matchTable = {}
+
+	local resultTable = {}
+
+	for i,v in pairs(matches) do matchTable[v.Name] = true end
+
+	for i,v in pairs(tab) do if matchTable[v.Name] then table.insert(resultTable,v) end end
+
+	return resultTable
+
+end
+
+
+
+function removeTableMatches(tab,matches)
+
+	local matchTable = {}
+
+	local resultTable = {}
+
+	for i,v in pairs(matches) do matchTable[v.Name] = true end
+
+	for i,v in pairs(tab) do if not matchTable[v.Name] then table.insert(resultTable,v) end end
+
+	return resultTable
+
+end
+
+
+
+function getPlayersByName(Name)
+
+	local Name,Len,Found = string.lower(Name),#Name,{}
+
+	for _,v in pairs(Players:GetPlayers()) do
+
+		if Name:sub(0,1) == '@' then
+
+			if string.sub(string.lower(v.Name),1,Len-1) == Name:sub(2) then
+
+				table.insert(Found,v)
+
+			end
+
+		else
+
+			if string.sub(string.lower(v.Name),1,Len) == Name or string.sub(string.lower(v.DisplayName),1,Len) == Name then
+
+				table.insert(Found,v)
+
+			end
+
+		end
+
+	end
+
+	return Found
+
+end
+
+function getPlayer(list,speaker)
+
+	if list == nil then return {speaker.Name} end
+
+	local nameList = splitString(list,",")
+
+
+
+	local foundList = {}
+
+
+
+	for _,name in pairs(nameList) do
+
+		if string.sub(name,1,1) ~= "+" and string.sub(name,1,1) ~= "-" then name = "+"..name end
+
+		local tokens = toTokens(name)
+
+		local initialPlayers = Players:GetPlayers()
+
+
+
+		for i,v in pairs(tokens) do
+
+			if v.Operator == "+" then
+
+				local tokenContent = v.Name
+
+				local foundCase = false
+
+				for regex,case in pairs(SpecialPlayerCases) do
+
+					local matches = {string.match(tokenContent,"^"..regex.."$")}
+
+					if #matches > 0 then
+
+						foundCase = true
+
+						initialPlayers = onlyIncludeInTable(initialPlayers,case(speaker,matches,initialPlayers))
+
+					end
+
+				end
+
+				if not foundCase then
+
+					initialPlayers = onlyIncludeInTable(initialPlayers,getPlayersByName(tokenContent))
+
+				end
+
+			else
+
+				local tokenContent = v.Name
+
+				local foundCase = false
+
+				for regex,case in pairs(SpecialPlayerCases) do
+
+					local matches = {string.match(tokenContent,"^"..regex.."$")}
+
+					if #matches > 0 then
+
+						foundCase = true
+
+						initialPlayers = removeTableMatches(initialPlayers,case(speaker,matches,initialPlayers))
+
+					end
+
+				end
+
+				if not foundCase then
+
+					initialPlayers = removeTableMatches(initialPlayers,getPlayersByName(tokenContent))
+
+				end
+
+			end
+
+		end
+
+
+
+		for i,v in pairs(initialPlayers) do table.insert(foundList,v) end
+
+	end
+
+
+
+	local foundNames = {}
+
+	for i,v in pairs(foundList) do table.insert(foundNames,v.Name) end
+
+
+
+	return foundNames
+
+end
+
+function Destroy(instance)
+
+	spawn(function()
+
+		DELETEVENT:FireServer(instance)
+
+	end)
+
+end
+
+
+
+AntiSkid.Name = "AntiSkid"
+
+AntiSkid.Parent = game:GetService("CoreGui")
+
+AntiSkid.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+
+
+Nerkless.Name = "Nerkless"
+
+Nerkless.Parent = AntiSkid
+
+Nerkless.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+
+Nerkless.Position = UDim2.new(0.332909256, 0, 0.185909986, 0)
+
+Nerkless.Size = UDim2.new(0, 390, 0, 243)
+
+
+
+ImageLabel.Parent = Nerkless
+
+ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+
+ImageLabel.Position = UDim2.new(0, 0, 0.139917701, 0)
+
+ImageLabel.Size = UDim2.new(0, 390, 0, 209)
+
+ImageLabel.ZIndex = 3
+
+ImageLabel.Image = "rbxassetid://7371693428"
+
+ImageLabel.ImageColor3 = Color3.fromRGB(255, 179, 0)
+
+ImageLabel.ImageTransparency = 0.420
+
+
+
+MainFrame.Name = "MainFrame"
+
+MainFrame.Parent = Nerkless
+
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+
+MainFrame.Size = UDim2.new(0, 390, 0, 34)
+
+
+
+TextLabel.Parent = MainFrame
+
+TextLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+
+TextLabel.Position = UDim2.new(0, 0, -0.0294117648, 0)
+
+TextLabel.Size = UDim2.new(0, 390, 0, 34)
+
+TextLabel.Font = Enum.Font.Bodoni
+
+TextLabel.RichText = true
+
+TextLabel.LineHeight = 1.060
+
+TextLabel.Text = "<i> Nerkles v1 </i>"
+
+TextLabel.TextColor3 = Color3.fromRGB(255, 179, 0)
+
+TextLabel.TextSize = 40.000
+
+
+
+ImageButton.Parent = MainFrame
+
+ImageButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+
+ImageButton.LayoutOrder = 5
+
+ImageButton.Position = UDim2.new(0.905128121, 0, -5.96046448e-08, 0)
+
+ImageButton.Size = UDim2.new(0, 37, 0, 34)
+
+ImageButton.ZIndex = 4
+
+ImageButton.Image = "rbxassetid://10720159507"
+
+
+
+Kill.Name = "Kill"
+
+Kill.Parent = Nerkless
+
+Kill.BackgroundColor3 = Color3.fromRGB(107, 107, 107)
+
+Kill.BackgroundTransparency = 0.600
+
+Kill.BorderSizePixel = 0
+
+Kill.Position = UDim2.new(0.0333333351, 0, 0.168070167, 0)
+
+Kill.Size = UDim2.new(0, 120, 0, 50)
+
+Kill.ZIndex = 999999999
+
+Kill.Font = Enum.Font.ArialBold
+
+Kill.Text = "Kill"
+
+Kill.TextColor3 = Color3.fromRGB(0, 0, 0)
+
+Kill.TextSize = 20.000
+
+Kill.MouseButton1Click:connect(function()
+
+	local players = getPlayer(target.Text, Players.LocalPlayer)
+
+	for i, v in pairs(players) do
+
+		if Players[v].Character:FindFirstChildOfClass("Humanoid").RigType == Enum.HumanoidRigType.R6 then
+
+			Destroy(Players[v].Character.Torso.Neck)
+
+		else
+
+			Destroy(Players[v].Character.Head.Neck)
+
+		end
+
+	end
+
+end)
+
+
+
+Kick.Name = "Kick"
+
+Kick.Parent = Nerkless
+
+Kick.BackgroundColor3 = Color3.fromRGB(107, 107, 107)
+
+Kick.BackgroundTransparency = 0.600
+
+Kick.BorderSizePixel = 0
+
+Kick.Position = UDim2.new(0.356410265, 0, 0.168070152, 0)
+
+Kick.Size = UDim2.new(0, 109, 0, 50)
+
+Kick.ZIndex = 999999999
+
+Kick.Font = Enum.Font.ArialBold
+
+Kick.Text = "Kick"
+
+Kick.TextColor3 = Color3.fromRGB(0, 0, 0)
+
+Kick.TextSize = 20.000
+
+Kick.MouseButton1Click:connect(function()
+
+	local players = getPlayer(target.Text, Players.LocalPlayer)
+
+	for i, v in pairs(players) do
+
+		Destroy(Players[v])
+
+	end
+
+end)
+
+
+
+function FindInTable(tbl,val)
+
+	if tbl == nil then return false end
+
+	for _,v in pairs(tbl) do
+
+		if v == val then return true end
+
+	end 
+
+	return false
+
+end
+
+local slockk = false
+
+local banned = {}
+
+Players.PlayerAdded:connect(function(plr)
+
+	if slockk then
+
+		Destroy(plr)
+
+	end
+
+	if FindInTable(banned, plr.UserId) then
+
+		Destroy(plr)
+
+	end
+
+end)
+
+
+
+Ban.Name = "Ban"
+
+Ban.Parent = Nerkless
+
+Ban.BackgroundColor3 = Color3.fromRGB(107, 107, 107)
+
+Ban.BackgroundTransparency = 0.600
+
+Ban.BorderSizePixel = 0
+
+Ban.Position = UDim2.new(0.658974349, 0, 0.167802468, 0)
+
+Ban.Size = UDim2.new(0, 120, 0, 50)
+
+Ban.ZIndex = 999999999
+
+Ban.Font = Enum.Font.ArialBold
+
+Ban.Text = "Ban"
+
+Ban.TextColor3 = Color3.fromRGB(0, 0, 0)
+
+Ban.TextSize = 20.000
+
+Ban.MouseButton1Click:connect(function()
+
+	local players = getPlayer(target.Text, Players.LocalPlayer)
+
+	for i, v in pairs(players) do
+
+		table.insert(banned, Players[v].UserId)
+
+		Destroy(Players[v])
+
+	end
+
+end)
+
+
+
+dex.Name = "dex"
+
+dex.Parent = Nerkless
+
+dex.BackgroundColor3 = Color3.fromRGB(107, 107, 107)
+
+dex.BackgroundTransparency = 0.600
+
+dex.BorderSizePixel = 0
+
+dex.Position = UDim2.new(0.0333333351, 0, 0.39440763, 0)
+
+dex.Size = UDim2.new(0, 120, 0, 50)
+
+dex.ZIndex = 999999999
+
+dex.Font = Enum.Font.ArialBold
+
+dex.Text = "Explorer"
+
+dex.TextColor3 = Color3.fromRGB(0, 0, 0)
+
+dex.TextSize = 20.000
+
+dex.MouseButton1Click:Connect(function()
+
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/loglizzy/dexV4/main/source.lua"))()
+
+end)
+
+
+
+Noregen.Name = "Noregen"
+
+Noregen.Parent = Nerkless
+
+Noregen.BackgroundColor3 = Color3.fromRGB(107, 107, 107)
+
+Noregen.BackgroundTransparency = 0.600
+
+Noregen.BorderSizePixel = 0
+
+Noregen.Position = UDim2.new(0.356410265, 0, 0.3944076, 0)
+
+Noregen.Size = UDim2.new(0, 109, 0, 50)
+
+Noregen.ZIndex = 999999999
+
+Noregen.Font = Enum.Font.ArialBold
+
+Noregen.Text = "NoRegen"
+
+Noregen.TextColor3 = Color3.fromRGB(0, 0, 0)
+
+Noregen.TextSize = 20.000
+
+Noregen.MouseButton1Click:connect(function()
+
+	local players = getPlayer(target.Text, Players.LocalPlayer)
+
+	for i, v in pairs(players) do
+
+		Destroy(Players[v].Character:FindFirstChild("Health"))
+
+	end
+
+end)
+
+
+
+SLOCK.Name = "SLOCK"
+
+SLOCK.Parent = Nerkless
+
+SLOCK.BackgroundColor3 = Color3.fromRGB(107, 107, 107)
+
+SLOCK.BackgroundTransparency = 0.600
+
+SLOCK.BorderSizePixel = 0
+
+SLOCK.Position = UDim2.new(0.658974349, 0, 0.394139916, 0)
+
+SLOCK.Size = UDim2.new(0, 120, 0, 50)
+
+SLOCK.ZIndex = 999999999
+
+SLOCK.Font = Enum.Font.ArialBold
+
+SLOCK.Text = "ServerLock"
+
+SLOCK.TextColor3 = Color3.fromRGB(0, 0, 0)
+
+SLOCK.TextSize = 20.000
+
+SLOCK.MouseButton1Click:connect(function()
+
+	if slockk then 
+
+		print"Nerkles   SLOCK: false"
+
+		slockk = false
+
+	else
+
+		print"Nerkles   SLOCK: true"
+
+		slockk = true
+
+	end
+
+end)
+
+
+
+dws.Name = "dws"
+
+dws.Parent = Nerkless
+
+dws.BackgroundColor3 = Color3.fromRGB(107, 107, 107)
+
+dws.BackgroundTransparency = 0.600
+
+dws.BorderSizePixel = 0
+
+dws.Position = UDim2.new(0.658974349, 0, 0.628707826, 0)
+
+dws.Size = UDim2.new(0, 120, 0, 50)
+
+dws.ZIndex = 999999999
+
+dws.Font = Enum.Font.ArialBold
+
+dws.Text = "DestroyWorkspace"
+
+dws.TextColor3 = Color3.fromRGB(117, 0, 0)
+
+dws.TextScaled = true
+
+dws.TextSize = 20.000
+
+dws.TextWrapped = true
+
+dws.MouseButton1Click:Connect(function()
+
+	for _, Target in pairs(game.Workspace:GetDescendants()) do
+
+		Destroy(Target)
+
+	end
+
+end)
+
+
+
+blockhead.Name = "punish"
+
+blockhead.Parent = Nerkless
+
+blockhead.BackgroundColor3 = Color3.fromRGB(107, 107, 107)
+
+blockhead.BackgroundTransparency = 0.600
+
+blockhead.BorderSizePixel = 0
+
+blockhead.Position = UDim2.new(0.0333333351, 0, 0.628975511, 0)
+
+blockhead.Size = UDim2.new(0, 120, 0, 50)
+
+blockhead.ZIndex = 999999999
+
+blockhead.Font = Enum.Font.ArialBold
+
+blockhead.Text = "Punish"
+
+blockhead.TextColor3 = Color3.fromRGB(0, 0, 0)
+
+blockhead.TextSize = 20.000
+
+blockhead.MouseButton1Click:connect(function()
+
+	local players = getPlayer(target.Text, Players.LocalPlayer)
+
+	for i, v in pairs(players) do
+
+		Destroy(Players[v].Character)
+
+	end
+
+end)
+
+
+
+dg.Name = "dg"
+
+dg.Parent = Nerkless
+
+dg.BackgroundColor3 = Color3.fromRGB(107, 107, 107)
+
+dg.BackgroundTransparency = 0.600
+
+dg.BorderSizePixel = 0
+
+dg.Position = UDim2.new(0.356410265, 0, 0.628975511, 0)
+
+dg.Size = UDim2.new(0, 109, 0, 50)
+
+dg.ZIndex = 999999999
+
+dg.Font = Enum.Font.ArialBold
+
+dg.Text = "DestroyGame"
+
+dg.TextColor3 = Color3.fromRGB(117, 0, 0)
+
+dg.TextScaled = true
+
+dg.TextSize = 20.000
+
+dg.TextWrapped = true
+
+dg.MouseButton1Click:Connect(function()
+
+	for _, Target in pairs(game:GetDescendants()) do
+
+		Destroy(Target)
+
+	end
+
+end)
+
+
+
+target.Name = "target"
+
+target.Parent = Nerkless
+
+target.BackgroundColor3 = Color3.fromRGB(107, 107, 107)
+
+target.BackgroundTransparency = 0.600
+
+target.BorderSizePixel = 0
+
+target.Position = UDim2.new(0.0333333351, 0, 0.868312776, 0)
+
+target.Size = UDim2.new(0, 363, 0, 27)
+
+target.ZIndex = 999999999
+
+target.ClearTextOnFocus = false
+
+target.Font = Enum.Font.SourceSans
+
+target.PlaceholderColor3 = Color3.fromRGB(44, 44, 44)
+
+target.PlaceholderText = "Target"
+
+target.Text = ""
+
+target.TextColor3 = Color3.fromRGB(0, 0, 0)
+
+target.TextSize = 20.000
+
+
+
+local selectionbox = Instance.new("SelectionBox", workspace)
+
+local equipped = false
+
+local oldmouse = mouse.Icon
+
+game:GetService("StarterGui"):SetCoreGuiEnabled('Backpack', true)
+
+Players.LocalPlayer.CharacterAdded:connect(function()
+
+	local destroytool = Instance.new("Tool", Players.LocalPlayer:FindFirstChildOfClass("Backpack"))
+
+	destroytool.RequiresHandle = false
+
+	destroytool.Name = "Delete Tool"
+
+	destroytool.ToolTip = "Nerkles Tool"
+
+	destroytool.TextureId = "http://www.roblox.com/asset/?id=7733955511"
+
+	destroytool.CanBeDropped = false
+
+	destroytool.Equipped:connect(function()
+
+		equipped = true
+
+		mouse.Icon = "rbxasset://textures\\HammerCursor.png"
+
+		while equipped do
+
+			selectionbox.Adornee = mouse.Target
+
+			wait()
+
+		end
+
+	end)
+
+	destroytool.Unequipped:connect(function()
+
+		equipped = false
+
+		selectionbox.Adornee = nil
+
+		mouse.Icon = oldmouse
+
+		print(oldmouse)
+
+	end)
+
+	destroytool.Activated:connect(function()
+
+		local explosion = Instance.new("Explosion", workspace)
+
+		explosion.BlastPressure = 0
+
+		explosion.BlastRadius = 0
+
+		explosion.DestroyJointRadiusPercent = 0
+
+		explosion.ExplosionType = Enum.ExplosionType.NoCraters
+
+		explosion.Position = mouse.Target.Position
+
+		Destroy(mouse.Target)
+
+	end)
+
+	game:GetService("StarterGui"):SetCoreGuiEnabled('Backpack', true)
+
+end)
+
+
+
+local function GOUFU_fake_script() -- ImageLabel.LocalScript 
+
+	local script = Instance.new('LocalScript', ImageLabel)
+
+
+
+	spawn(function()
+
+		wait(60)
+
+		script.Parent.Image = "rbxassetid://11751396176"
+
+		wait(60)
+
+		script.Parent.Image = "rbxassetid://11751396176"
+
+		wait(60)
+
+		script.Parent.Image = "rbxassetid://10111107769"
+
+		wait(60)
+
+		script.Parent.Image = "rbxassetid://12053823591"
+
+		wait(60)
+
+		script.Parent.Image = "rbxassetid://6013453821"
+
+		wait(60)
+
+		script.Parent.Image = "rbxassetid://1107231018"
+
+	end)
+
+end
+
+coroutine.wrap(GOUFU_fake_script)()
+
+local function PBVYWQN_fake_script() -- ImageButton.LocalScript 
+
+	local script = Instance.new('LocalScript', ImageButton)
+
+
+
+	script.Parent.MouseButton1Click:Connect(function()
+
+		script.Parent.Parent.Parent.Parent:Destroy()
+
+	end)
+
+end
+
+coroutine.wrap(PBVYWQN_fake_script)()
+
+local function ADTD_fake_script() -- MainFrame.LocalScript 
+
+	local script = Instance.new('LocalScript', MainFrame)
+
+
+
+	local UserInputService = game:GetService("UserInputService")
+
+	
+
+	local gui = script.Parent
+
+	
+
+	local dragging
+
+	local dragInput
+
+	local dragStart
+
+	local startPos
+
+	
+
+	local function update(input)
+
+		local delta = input.Position - dragStart
+
+		gui.Parent.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+
+	end
+
+	
+
+	gui.InputBegan:Connect(function(input)
+
+		if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and UserInputService:GetFocusedTextBox() == nil then
+
+			dragging = true
+
+			dragStart = input.Position
+
+			startPos = gui.Parent.Position
+
+	
+
+			input.Changed:Connect(function()
+
+				if input.UserInputState == Enum.UserInputState.End then
+
+					dragging = false
+
+				end
+
+			end)
+
+		end
+
+	end)
+
+	
+
+	gui.InputChanged:Connect(function(input)
+
+		if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and UserInputService:GetFocusedTextBox() == nil then
+
+			dragInput = input
+
+		end
+
+	end)
+
+	
+
+	UserInputService.InputChanged:Connect(function(input)
+
+		if input == dragInput and dragging then
+
+			update(input)
+
+		end
+
+	end)
+
+end
+
+coroutine.wrap(ADTD_fake_script)()
