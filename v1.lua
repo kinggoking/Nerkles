@@ -1,5 +1,5 @@
 --Nerkles v1
-local DELETEEVENT = _G.PATH
+local DELETEEVENT = nil
 local Nerkles = Instance.new("ScreenGui")
 local main = Instance.new("Frame")
 local Text = Instance.new("TextLabel")
