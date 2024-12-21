@@ -1,4 +1,5 @@
 --Nerkles v1
+--Based on HarkedV2 Reborn
 local DELETEEVENT = nil
 local Nerkles = Instance.new("ScreenGui")
 local main = Instance.new("Frame")
