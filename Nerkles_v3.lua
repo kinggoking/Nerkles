@@ -1,4 +1,5 @@
---Nerkles v3
+--Nerkles v3 
+--Based on F3X Replicator Gui
 local AntiSkid = Instance.new("ScreenGui")
 local Nerkless = Instance.new("Frame")
 local ImageLabel = Instance.new("ImageLabel")
