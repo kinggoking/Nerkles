@@ -1,6 +1,6 @@
 --Nerkles v1
 --Based on HarkedV2 Reborn
-local DELETEEVENT = nil
+local DELETEEVENT = game:GetService("ReplicatedStorage").DeleteCar
 local Nerkles = Instance.new("ScreenGui")
 local main = Instance.new("Frame")
 local Text = Instance.new("TextLabel")
